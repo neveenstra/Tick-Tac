@@ -9,6 +9,7 @@
   "lv_conf": {
     "filePath": "lv_conf.h"
   },
+  "sourceFolder": "ui",
   "sourceFiles": [
     "src/main.c"
   ],

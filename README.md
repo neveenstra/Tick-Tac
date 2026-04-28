@@ -1,62 +1,32 @@
-# Tick-Tac with LVGL
+# _Sample project_
 
-This project is a Tick-Tac game built with [LVGL](https://lvgl.io/) - a lightweight and versatile graphics library for embedded systems.
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-## Project Structure
+This is the simplest buildable example. The example is used by command `idf.py create-project`
+that copies the project to user specified path and set it's name. For more information follow the [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project)
+
+
+
+## How to use example
+We encourage the users to use the example as a template for the new projects.
+A recommended way is to follow the instructions on a [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project).
+
+## Example folder contents
+
+The project **sample_project** contains one source file in C language [main.c](main/main.c). The file is located in folder [main](main).
+
+ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt`
+files that provide set of directives and instructions describing the project's source files and targets
+(executable, library, or both). 
+
+Below is short explanation of remaining files in the project folder.
 
 ```
-.
-├── src/
-│   └── main.c              # Main application entry point
-├── lv_conf.h               # LVGL configuration file
-├── CMakeLists.txt          # CMake build configuration
-├── package.json            # Project metadata
-├── .lvglproject            # LVGL web editor project file
-└── README.md               # This file
+├── CMakeLists.txt
+├── main
+│   ├── CMakeLists.txt
+│   └── main.c
+└── README.md                  This is the file you are currently reading
 ```
-
-## Prerequisites
-
-- CMake 3.16 or later
-- C compiler (GCC, Clang, or MSVC)
-- LVGL library (v9.6.0 or compatible)
-
-## Setup
-
-1. Clone the LVGL repository as a subdirectory (or install it as a dependency):
-```bash
-cd Tick-Tac
-git clone https://github.com/lvgl/lvgl.git
-```
-
-2. Create a build directory and configure the project:
-```bash
-cmake -B build
-```
-
-3. Build the project:
-```bash
-cmake --build build
-```
-
-## LVGL Web Editor
-
-This project is compatible with the [LVGL web editor](https://lvgl.io/tools/online-editor). To use it:
-
-1. Open the LVGL web editor in your browser
-2. Import this project by uploading the `.lvglproject` file
-3. Edit your UI visually and export the generated code
-
-## Configuration
-
-Key LVGL settings can be modified in `lv_conf.h`:
-
-- **LV_COLOR_DEPTH**: Color depth (16 bits by default)
-- **LV_DPI_DEF**: Default DPI for responsive sizing
-- **LV_DISPLAY_***: Display-related settings
-
-Adjust display dimensions in `package.json` and `.lvglproject` to match your target hardware.
-
-## License
-
-MIT
+Additionally, the sample project contains Makefile and component.mk files, used for the legacy Make based build system. 
+They are not used or needed when building with CMake and idf.py.

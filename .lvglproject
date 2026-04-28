@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "projectName": "Tick-Tac",
+  "displaySize": {
+    "width": 320,
+    "height": 240
+  },
+  "colorDepth": 16,
+  "lv_conf": {
+    "filePath": "lv_conf.h"
+  },
+  "sourceFiles": [
+    "src/main.c"
+  ],
+  "headerFiles": [
+    "lv_conf.h"
+  ]
+}

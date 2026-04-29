@@ -5,6 +5,8 @@
 #include "esp_check.h"
 
 #include "nvs_flash.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "esp_lvgl_port.h"
 
@@ -13,6 +15,7 @@
 #include "bsp_i2c.h"
 #include "bsp_spi.h"
 #include "bsp_qmi8658.h"
+#include "midi_clock.h"
 
 #include "lvgl_ui.h"
 
@@ -44,6 +47,50 @@ static lv_indev_t *lvgl_touch_indev = NULL;
 
 static esp_err_t app_lvgl_init(void);
 
+static void orientation_task(void *arg)
+{
+    qmi8658_data_t data;
+    lv_disp_rot_t  current_rot = LV_DISP_ROT_NONE;
+    bool           dimmed      = false;
+
+    for (;;) {
+        bool rotation_changed = false;
+        if (bsp_qmi8658_read_data(&data)) {
+            lv_disp_rot_t wanted = current_rot;
+            if (data.acc_x < -4000) wanted = LV_DISP_ROT_180;
+            else if (data.acc_x >  4000) wanted = LV_DISP_ROT_NONE;
+            if (wanted != current_rot) {
+                current_rot = wanted;
+                rotation_changed = true;
+            }
+        }
+
+        bool    set_bright = false;
+        uint8_t new_bright = 100;
+        if (lvgl_port_lock(0)) {
+            if (rotation_changed)
+                lv_disp_set_rotation(lv_disp_get_default(), current_rot);
+            uint32_t inactive_ms = lv_disp_get_inactive_time(NULL);
+            if (inactive_ms > 20000 && !dimmed) {
+                dimmed = true;
+                lvgl_ui_set_dimmed(true);
+                set_bright = true;
+                new_bright = 10;
+            } else if (inactive_ms <= 20000 && dimmed) {
+                dimmed = false;
+                lvgl_ui_set_dimmed(false);
+                set_bright = true;
+                new_bright = 100;
+            }
+            lvgl_port_unlock();
+        }
+        if (set_bright)
+            bsp_display_set_brightness(new_bright);
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
 
 void app_main(void)
 {
@@ -70,11 +117,15 @@ void app_main(void)
     bsp_display_brightness_init();
     bsp_display_set_brightness(100);
 
+    midi_clock_init();
+
     if (lvgl_port_lock(0))
     {
         lvgl_ui_init();
         lvgl_port_unlock();
     }
+
+    xTaskCreate(orientation_task, "orient", 2048, NULL, 2, NULL);
 }
 
 static esp_err_t app_lvgl_init(void)

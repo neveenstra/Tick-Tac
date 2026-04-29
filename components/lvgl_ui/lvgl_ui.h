@@ -14,6 +14,7 @@ void     lvgl_ui_init(void);
 uint16_t lvgl_ui_get_tempo(void);
 void     lvgl_ui_set_tempo(uint16_t tempo);
 bool     lvgl_ui_is_playing(void);
+void     lvgl_ui_set_dimmed(bool dimmed);
 
 #ifdef __cplusplus
 }

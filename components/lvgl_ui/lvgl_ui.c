@@ -13,7 +13,9 @@
 static const char *TAG = "orient";
 
 // Comfortaa Bold 20px — used only for the TICK / TAC logo text
-LV_FONT_DECLARE(comfortaa_bold_20);
+LV_FONT_DECLARE(comfortaa);
+
+
 
 // Vaporwave palette
 #define COLOR_BG       lv_color_make(10,  0,  25)
@@ -315,8 +317,8 @@ void lvgl_ui_init(void)
     lv_obj_set_style_pad_column(title_row, 5, LV_PART_MAIN);
 
     lv_obj_t *tick_lbl = lv_label_create(title_row);
-    lv_label_set_text(tick_lbl, "Tick");
-    lv_obj_set_style_text_font(tick_lbl,  &comfortaa_bold_20, LV_PART_MAIN);
+    lv_label_set_text(tick_lbl, "tick");
+    lv_obj_set_style_text_font(tick_lbl,  &comfortaa, LV_PART_MAIN);
     lv_obj_set_style_text_color(tick_lbl, COLOR_CYAN,         LV_PART_MAIN);
 
     //capsule dash
@@ -327,10 +329,10 @@ void lvgl_ui_init(void)
     lv_obj_set_style_radius(tt_grid, LV_RADIUS_CIRCLE, 0);
     lv_obj_set_style_bg_color(tt_grid, COLOR_CYAN, 0);
     lv_obj_set_style_bg_opa(tt_grid, LV_OPA_COVER, 0);
-
+    lv_obj_set_style_text_font(tick_lbl,  &comfortaa, LV_PART_MAIN);
     lv_obj_t *tac_lbl = lv_label_create(title_row);
-    lv_label_set_text(tac_lbl, "Tac");
-    lv_obj_set_style_text_font(tac_lbl,  &comfortaa_bold_20, LV_PART_MAIN);
+    lv_label_set_text(tac_lbl, "tac");
+    lv_obj_set_style_text_font(tac_lbl,  &comfortaa, LV_PART_MAIN);
     lv_obj_set_style_text_color(tac_lbl, COLOR_CYAN,         LV_PART_MAIN);
 
     start_stop_btn = lv_btn_create(root);

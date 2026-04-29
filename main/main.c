@@ -21,7 +21,7 @@
 
 #define DISPLAY_ROTATION 90
 #define LCD_H_RES (320)
-#define LCD_V_RES (240)
+#define LCD_V_RES (172)
 
 
 #define LCD_DRAW_BUFF_HEIGHT (20)

@@ -7,6 +7,30 @@
 #include "esp_log.h"
 #include "bsp_touch.h"
 
+static esp_lcd_touch_handle_t s_touch_handle = NULL;
+
+void bsp_touch_set_rotation(uint16_t rotation)
+{
+    if (!s_touch_handle) return;
+    if (rotation == 90) {
+        esp_lcd_touch_set_swap_xy(s_touch_handle, true);
+        esp_lcd_touch_set_mirror_x(s_touch_handle, false);
+        esp_lcd_touch_set_mirror_y(s_touch_handle, false);
+    } else if (rotation == 180) {
+        esp_lcd_touch_set_swap_xy(s_touch_handle, false);
+        esp_lcd_touch_set_mirror_x(s_touch_handle, false);
+        esp_lcd_touch_set_mirror_y(s_touch_handle, true);
+    } else if (rotation == 270) {
+        esp_lcd_touch_set_swap_xy(s_touch_handle, true);
+        esp_lcd_touch_set_mirror_x(s_touch_handle, true);
+        esp_lcd_touch_set_mirror_y(s_touch_handle, true);
+    } else {
+        esp_lcd_touch_set_swap_xy(s_touch_handle, false);
+        esp_lcd_touch_set_mirror_x(s_touch_handle, true);
+        esp_lcd_touch_set_mirror_y(s_touch_handle, false);
+    }
+}
+
 void bsp_touch_init(esp_lcd_touch_handle_t *touch_handle, i2c_master_bus_handle_t bus_handle, uint16_t xmax, uint16_t ymax, uint16_t rotation)
 {
     static i2c_master_dev_handle_t dev_handle;
@@ -49,4 +73,5 @@ void bsp_touch_init(esp_lcd_touch_handle_t *touch_handle, i2c_master_bus_handle_
     }
 
     ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_axs5106(dev_handle, &tp_cfg, touch_handle));
+    s_touch_handle = *touch_handle;
 }

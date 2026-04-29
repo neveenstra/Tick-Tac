@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 void bsp_touch_init(esp_lcd_touch_handle_t *touch_handle, i2c_master_bus_handle_t bus_handle, uint16_t xmax, uint16_t ymax, uint16_t rotation);
+void bsp_touch_set_rotation(uint16_t rotation);
 #ifdef __cplusplus
 }
 #endif

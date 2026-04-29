@@ -216,7 +216,9 @@ static void orientation_task(void *arg)
     for (;;) {
         if (bsp_qmi8658_read_data(&data)) {
             ESP_LOGI(TAG, "x=%6d  y=%6d  z=%6d", (int)data.acc_x, (int)data.acc_y, (int)data.acc_z);
-            lv_disp_rot_t wanted = (data.acc_x < -4000) ? LV_DISP_ROT_180 : LV_DISP_ROT_NONE;
+            lv_disp_rot_t wanted = current_rot;
+            if (data.acc_x < -4000) wanted = LV_DISP_ROT_180;
+            else if (data.acc_x >  4000) wanted = LV_DISP_ROT_NONE;
             if (wanted != current_rot) {
                 current_rot = wanted;
                 if (lvgl_port_lock(0)) {
@@ -305,11 +307,11 @@ void lvgl_ui_init(void)
 
     // ── Header ──────────────────────────────────────────────────────────────
 
-    // "TICK" [tic-tac grid] "TAC" — Comfortaa Bold, flex row
+    // "TICK" [tic-tac] "TAC" — Comfortaa Bold, flex row
     lv_obj_t *title_row = lv_obj_create(root);
     lv_obj_remove_style_all(title_row);
     lv_obj_set_size(title_row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_pos(title_row, 10, 5);
+    lv_obj_set_pos(title_row, 14, 10);
     lv_obj_clear_flag(title_row, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_layout(title_row, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(title_row, LV_FLEX_FLOW_ROW);
@@ -330,6 +332,7 @@ void lvgl_ui_init(void)
     lv_obj_set_style_bg_color(tt_grid, COLOR_CYAN, 0);
     lv_obj_set_style_bg_opa(tt_grid, LV_OPA_COVER, 0);
     lv_obj_set_style_text_font(tick_lbl,  &comfortaa, LV_PART_MAIN);
+    
     lv_obj_t *tac_lbl = lv_label_create(title_row);
     lv_label_set_text(tac_lbl, "tac");
     lv_obj_set_style_text_font(tac_lbl,  &comfortaa, LV_PART_MAIN);

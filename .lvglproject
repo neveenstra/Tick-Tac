@@ -5,15 +5,5 @@
     "width": 320,
     "height": 240
   },
-  "colorDepth": 16,
-  "lv_conf": {
-    "filePath": "lv_conf.h"
-  },
-  "sourceFolder": "ui",
-  "sourceFiles": [
-    "src/main.c"
-  ],
-  "headerFiles": [
-    "lv_conf.h"
-  ]
+  "colorDepth": 16
 }

@@ -12,24 +12,14 @@
 #include "bsp_touch.h"
 #include "bsp_i2c.h"
 #include "bsp_spi.h"
-// #include "bsp_wifi.h"
-// #include "bsp_sdcard.h"
-// #include "bsp_battery.h"
-// #include "bsp_qmi8658.h"
 
-// #include "iot_button.h"
-// #include "button_gpio.h"
+#include "lvgl_ui.h"
 
-#include "demos/lv_demos.h"
-
-
-// #include "lvgl_ui.h"
-
-#define EXAMPLE_DISPLAY_ROTATION 0
+#define EXAMPLE_DISPLAY_ROTATION 90
 
 #if EXAMPLE_DISPLAY_ROTATION == 90 || EXAMPLE_DISPLAY_ROTATION == 270
 #define EXAMPLE_LCD_H_RES (320)
-#define EXAMPLE_LCD_V_RES (172)
+#define EXAMPLE_LCD_V_RES (240)
 #else
 #define EXAMPLE_LCD_H_RES (172)
 #define EXAMPLE_LCD_V_RES (320)
@@ -80,9 +70,7 @@ void app_main(void)
 
     if (lvgl_port_lock(0))
     {
-        // lv_demo_benchmark();
-        // lv_demo_music();
-        lv_demo_widgets();
+        lvgl_ui_init();
         lvgl_port_unlock();
     }
 }

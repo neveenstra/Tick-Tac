@@ -1,0 +1,19 @@
+The orientation code is at lvgl_ui.c:205-220 (orientation_task) and it's launched at line 420.
+
+The key condition is line 213:
+
+
+lv_disp_rot_t wanted = (data.acc_x < -4000) ? LV_DISP_ROT_180 : LV_DISP_ROT_NONE;
+The debug log on line 212 prints x=... y=... z=... every 500ms via idf.py monitor. Once you flash and flip the device, tell me which axis changes — I'll update the condition
+
+
+UI doesnt work when flipped
+
+
+DIN-5 connector wiring:
+
+DIN Pin	Connect to
+2	GND
+4	33Ω → 3.3V
+5	33Ω → GPIO4
+1, 3	No connect

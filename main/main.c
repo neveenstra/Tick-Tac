@@ -12,6 +12,7 @@
 #include "bsp_touch.h"
 #include "bsp_i2c.h"
 #include "bsp_spi.h"
+#include "bsp_qmi8658.h"
 
 #include "lvgl_ui.h"
 
@@ -57,6 +58,7 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     i2c_bus_handle = bsp_i2c_init();
+    bsp_qmi8658_init(i2c_bus_handle);
     bsp_spi_init();
     bsp_display_init(&io_handle, &panel_handle, EXAMPLE_LCD_H_RES * EXAMPLE_LCD_DRAW_BUFF_HEIGHT);
     bsp_touch_init(&touch_handle, i2c_bus_handle, EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES, EXAMPLE_DISPLAY_ROTATION);

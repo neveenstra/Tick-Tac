@@ -19,18 +19,13 @@
 
 #include "lvgl_ui.h"
 
-#define EXAMPLE_DISPLAY_ROTATION 90
+#define DISPLAY_ROTATION 90
+#define LCD_H_RES (320)
+#define LCD_V_RES (240)
 
-#if EXAMPLE_DISPLAY_ROTATION == 90 || EXAMPLE_DISPLAY_ROTATION == 270
-#define EXAMPLE_LCD_H_RES (320)
-#define EXAMPLE_LCD_V_RES (240)
-#else
-#define EXAMPLE_LCD_H_RES (172)
-#define EXAMPLE_LCD_V_RES (320)
-#endif
 
-#define EXAMPLE_LCD_DRAW_BUFF_HEIGHT (50)
-#define EXAMPLE_LCD_DRAW_BUFF_DOUBLE (1)
+#define LCD_DRAW_BUFF_HEIGHT (20)
+#define LCD_DRAW_BUFF_DOUBLE (1)
 
 
 static char *TAG = "lvgl_example";
@@ -107,8 +102,8 @@ void app_main(void)
     i2c_bus_handle = bsp_i2c_init();
     bsp_qmi8658_init(i2c_bus_handle);
     bsp_spi_init();
-    bsp_display_init(&io_handle, &panel_handle, EXAMPLE_LCD_H_RES * EXAMPLE_LCD_DRAW_BUFF_HEIGHT);
-    bsp_touch_init(&touch_handle, i2c_bus_handle, EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES, EXAMPLE_DISPLAY_ROTATION);
+    bsp_display_init(&io_handle, &panel_handle, LCD_H_RES * LCD_DRAW_BUFF_HEIGHT);
+    bsp_touch_init(&touch_handle, i2c_bus_handle, LCD_H_RES, LCD_V_RES, DISPLAY_ROTATION);
 
     ESP_ERROR_CHECK(app_lvgl_init());
 
@@ -145,10 +140,10 @@ static esp_err_t app_lvgl_init(void)
     lvgl_port_display_cfg_t disp_cfg = {
         .io_handle = io_handle,
         .panel_handle = panel_handle,
-        .buffer_size = EXAMPLE_LCD_H_RES * EXAMPLE_LCD_DRAW_BUFF_HEIGHT,
-        .double_buffer = EXAMPLE_LCD_DRAW_BUFF_DOUBLE,
-        .hres = EXAMPLE_LCD_H_RES,
-        .vres = EXAMPLE_LCD_V_RES,
+        .buffer_size = LCD_H_RES * LCD_DRAW_BUFF_HEIGHT,
+        .double_buffer = LCD_DRAW_BUFF_DOUBLE,
+        .hres = LCD_H_RES,
+        .vres = LCD_V_RES,
         .monochrome = false,
         /* Rotation values must be same as used in esp_lcd for initial settings of the screen */
         .rotation = {
@@ -162,17 +157,17 @@ static esp_err_t app_lvgl_init(void)
             .swap_bytes = true,
 #endif
         }};
-#if EXAMPLE_DISPLAY_ROTATION == 90
+#if DISPLAY_ROTATION == 90
     disp_cfg.rotation.swap_xy = true;
     disp_cfg.rotation.mirror_x = true;
     disp_cfg.rotation.mirror_y = false;
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 0, 34));
-#elif EXAMPLE_DISPLAY_ROTATION == 180
+#elif DISPLAY_ROTATION == 180
     disp_cfg.rotation.swap_xy = false;
     disp_cfg.rotation.mirror_x = true;
     disp_cfg.rotation.mirror_y = true;
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 34, 0));
-#elif EXAMPLE_DISPLAY_ROTATION == 270
+#elif DISPLAY_ROTATION == 270
     disp_cfg.rotation.swap_xy = true;
     disp_cfg.rotation.mirror_x = false;
     disp_cfg.rotation.mirror_y = true;

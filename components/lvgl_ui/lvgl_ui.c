@@ -1,16 +1,17 @@
 #include "lvgl_ui.h"
 #include "midi_clock.h"
 #include "esp_timer.h"
-#include "esp_log.h"
 #include <string.h>
 #include <stdbool.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "bsp_qmi8658.h"
+#include "bsp_display.h"
 #include "esp_lvgl_port.h"
 
-static const char *TAG = "orient";
+static void start_beat_pulse(void);
+static void stop_beat_pulse(void);
 
 // Comfortaa Bold 20px — used only for the TICK / TAC logo text
 LV_FONT_DECLARE(comfortaa);
@@ -38,6 +39,9 @@ static bool     is_playing    = false;
 static lv_obj_t *tempo_label;
 static lv_obj_t *start_stop_btn;
 static lv_obj_t *start_stop_label;
+static lv_obj_t *bpm_box_obj;
+
+static bool s_dimmed = false;
 
 // Tap tempo ring buffer
 #define TAP_MAX        8
@@ -65,6 +69,10 @@ static void update_tempo_display(void)
     snprintf(buf, sizeof(buf), "%d", current_tempo);
     lv_label_set_text(tempo_label, buf);
     midi_clock_set_tempo(current_tempo);
+    if (is_playing) {
+        stop_beat_pulse();
+        start_beat_pulse();
+    }
 }
 
 static void update_start_stop_btn(void)
@@ -197,13 +205,47 @@ static void bpm_box_cb(lv_event_t *e)
     }
 }
 
+static void pulse_anim_cb(void *obj, int32_t v)
+{
+    lv_obj_set_style_shadow_width((lv_obj_t *)obj, v, LV_PART_MAIN);
+    lv_obj_set_style_shadow_opa((lv_obj_t *)obj,
+        (lv_opa_t)(LV_OPA_50 + (v - 22) * (LV_OPA_90 - LV_OPA_50) / (55 - 22)),
+        LV_PART_MAIN);
+}
+
+static void start_beat_pulse(void)
+{
+    uint32_t beat_ms = 60000u / current_tempo;
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, bpm_box_obj);
+    lv_anim_set_exec_cb(&a, pulse_anim_cb);
+    lv_anim_set_values(&a, 22, 55);
+    lv_anim_set_time(&a, beat_ms / 5);
+    lv_anim_set_playback_time(&a, beat_ms * 4 / 5);
+    lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_start(&a);
+}
+
+static void stop_beat_pulse(void)
+{
+    lv_anim_del(bpm_box_obj, pulse_anim_cb);
+    lv_obj_set_style_shadow_width(bpm_box_obj, 22, LV_PART_MAIN);
+    lv_obj_set_style_shadow_opa(bpm_box_obj, LV_OPA_50, LV_PART_MAIN);
+}
+
 static void start_stop_cb(lv_event_t *e)
 {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
     is_playing = !is_playing;
     update_start_stop_btn();
-    if (is_playing) midi_clock_start();
-    else            midi_clock_stop();
+    if (is_playing) {
+        midi_clock_start();
+        start_beat_pulse();
+    } else {
+        midi_clock_stop();
+        stop_beat_pulse();
+    }
 }
 
 // ------------------------------------------------------------------ orientation
@@ -214,19 +256,39 @@ static void orientation_task(void *arg)
     lv_disp_rot_t  current_rot = LV_DISP_ROT_NONE;
 
     for (;;) {
+        bool rotation_changed = false;
         if (bsp_qmi8658_read_data(&data)) {
-            ESP_LOGI(TAG, "x=%6d  y=%6d  z=%6d", (int)data.acc_x, (int)data.acc_y, (int)data.acc_z);
             lv_disp_rot_t wanted = current_rot;
             if (data.acc_x < -4000) wanted = LV_DISP_ROT_180;
             else if (data.acc_x >  4000) wanted = LV_DISP_ROT_NONE;
             if (wanted != current_rot) {
                 current_rot = wanted;
-                if (lvgl_port_lock(0)) {
-                    lv_disp_set_rotation(lv_disp_get_default(), wanted);
-                    lvgl_port_unlock();
-                }
+                rotation_changed = true;
             }
         }
+
+        bool set_bright = false;
+        uint8_t new_bright = 100;
+        if (lvgl_port_lock(0)) {
+            if (rotation_changed)
+                lv_disp_set_rotation(lv_disp_get_default(), current_rot);
+            uint32_t inactive_ms = lv_disp_get_inactive_time(NULL);
+            if (inactive_ms > 20000 && !s_dimmed) {
+                s_dimmed = true;
+                set_bright = true;
+                new_bright = 10;
+                stop_beat_pulse();
+            } else if (inactive_ms <= 20000 && s_dimmed) {
+                s_dimmed = false;
+                set_bright = true;
+                new_bright = 100;
+                if (is_playing) start_beat_pulse();
+            }
+            lvgl_port_unlock();
+        }
+        if (set_bright)
+            bsp_display_set_brightness(new_bright);
+
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
@@ -359,7 +421,8 @@ void lvgl_ui_init(void)
 
     // ── BPM box (tap tempo + swipe to set) ──────────────────────────────────
 
-    lv_obj_t *bpm_box = lv_obj_create(root);
+    bpm_box_obj = lv_obj_create(root);
+    lv_obj_t *bpm_box = bpm_box_obj;
     lv_obj_set_size(bpm_box, 220, 88);
     lv_obj_align(bpm_box, LV_ALIGN_CENTER, 0, 0);
     lv_obj_clear_flag(bpm_box, LV_OBJ_FLAG_SCROLLABLE);

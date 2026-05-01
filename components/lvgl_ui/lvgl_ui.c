@@ -322,7 +322,7 @@ void lvgl_ui_init(void)
     lv_obj_t *title_row = lv_obj_create(root);
     lv_obj_remove_style_all(title_row);
     lv_obj_set_size(title_row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_pos(title_row, 14, 10);
+    lv_obj_set_pos(title_row, 12, 4);
     lv_obj_clear_flag(title_row, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_layout(title_row, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(title_row, LV_FLEX_FLOW_ROW);
@@ -401,7 +401,7 @@ void lvgl_ui_init(void)
     lv_label_set_text(tempo_label, "120");
     lv_obj_set_style_text_font(tempo_label,  &lv_font_montserrat_48, LV_PART_MAIN);
     lv_obj_set_style_text_color(tempo_label, COLOR_TEXT,             LV_PART_MAIN);
-    lv_obj_align(tempo_label, LV_ALIGN_CENTER, 0, 4);
+    lv_obj_align(tempo_label, LV_ALIGN_CENTER, 0, 0);
 
     lv_obj_t *bpm_lbl = lv_label_create(bpm_box);
     lv_label_set_text(bpm_lbl, "BPM");

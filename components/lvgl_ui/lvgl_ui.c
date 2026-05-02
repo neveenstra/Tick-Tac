@@ -436,7 +436,6 @@ void lvgl_ui_init(void)
     lv_obj_set_style_text_font(plus_lbl,  &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_set_style_text_color(plus_lbl, COLOR_CYAN,             LV_PART_MAIN);
     lv_obj_center(plus_lbl);
-
 }
 
 // ------------------------------------------------------------------ public API

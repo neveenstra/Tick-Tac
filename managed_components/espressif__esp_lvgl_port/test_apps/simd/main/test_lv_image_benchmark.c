@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "lv_image_common.h"
 #include "lv_draw_sw_blend.h"
 #include "lv_draw_sw_blend_to_rgb565.h"
+#include "lv_draw_sw_blend_to_rgb888.h"
 
 #define COMMON_DIM 128      // Common matrix dimension 128x128 pixels
 #define WIDTH COMMON_DIM
@@ -81,8 +82,8 @@ TEST_CASE("LV Image benchmark RGB565 blend to RGB565", "[image][benchmark][RGB56
 {
     uint16_t *dest_array_align16  = (uint16_t *)memalign(16, STRIDE * HEIGHT * sizeof(uint16_t) + UNALIGN_BYTES);
     uint16_t *src_array_align16  = (uint16_t *)memalign(16, STRIDE * HEIGHT * sizeof(uint16_t) + UNALIGN_BYTES);
-    TEST_ASSERT_NOT_EQUAL(NULL, dest_array_align16);
-    TEST_ASSERT_NOT_EQUAL(NULL, src_array_align16);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(NULL, dest_array_align16, "Lack of memory");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(NULL, src_array_align16, "Lack of memory");
 
     // Apply byte unalignment (different for each array) for the worst-case test scenario
     uint16_t *dest_array_align1 = (uint16_t *)((uint8_t *)dest_array_align16 + UNALIGN_BYTES - 1);
@@ -101,9 +102,43 @@ TEST_CASE("LV Image benchmark RGB565 blend to RGB565", "[image][benchmark][RGB56
         .dest_array_align16 = (void *)dest_array_align16,
         .dest_array_align1 = (void *)dest_array_align1,
         .blend_api_func = &lv_draw_sw_blend_image_to_rgb565,
+        .color_format = LV_COLOR_FORMAT_RGB565,
     };
 
     ESP_LOGI(TAG_LV_IMAGE_BENCH, "running test for RGB565 color format");
+    lv_image_benchmark_init(&test_params);
+    free(dest_array_align16);
+    free(src_array_align16);
+}
+
+TEST_CASE("LV Image benchmark RGB888 blend to RGB888", "[image][benchmark][RGB888]")
+{
+    uint8_t *dest_array_align16  = (uint8_t *)memalign(16, (STRIDE * HEIGHT * sizeof(uint8_t) * 3) + UNALIGN_BYTES);
+    uint8_t *src_array_align16  = (uint8_t *)memalign(16, (STRIDE * HEIGHT * sizeof(uint8_t) * 3) + UNALIGN_BYTES);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(NULL, dest_array_align16, "Lack of memory");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(NULL, src_array_align16, "Lack of memory");
+
+    // Apply byte unalignment (different for each array) for the worst-case test scenario
+    uint8_t *dest_array_align1 = dest_array_align16 + UNALIGN_BYTES - 1;
+    uint8_t *src_array_align1 = src_array_align16 + UNALIGN_BYTES;
+
+    bench_test_case_lv_image_params_t test_params = {
+        .height = HEIGHT,
+        .width = WIDTH,
+        .dest_stride = STRIDE * sizeof(uint8_t) * 3,
+        .src_stride = STRIDE * sizeof(uint8_t) * 3,
+        .cc_height = HEIGHT,
+        .cc_width = WIDTH - 1,
+        .benchmark_cycles = BENCHMARK_CYCLES,
+        .src_array_align16 = (void *)src_array_align16,
+        .src_array_align1 = (void *)src_array_align1,
+        .dest_array_align16 = (void *)dest_array_align16,
+        .dest_array_align1 = (void *)dest_array_align1,
+        .blend_api_func_px_size = &lv_draw_sw_blend_image_to_rgb888,
+        .color_format = LV_COLOR_FORMAT_RGB888,
+    };
+
+    ESP_LOGI(TAG_LV_IMAGE_BENCH, "running test for RGB888 color format");
     lv_image_benchmark_init(&test_params);
     free(dest_array_align16);
     free(src_array_align16);
@@ -121,7 +156,7 @@ static void lv_image_benchmark_init(bench_test_case_lv_image_params_t *test_para
         .mask_buf = NULL,
         .src_buf = test_params->src_array_align16,
         .src_stride = test_params->src_stride,
-        .src_color_format = LV_COLOR_FORMAT_RGB565,
+        .src_color_format = test_params->color_format,
         .opa = LV_OPA_MAX,
         .blend_mode = LV_BLEND_MODE_NORMAL,
         .use_asm = true,
@@ -141,12 +176,14 @@ static void lv_image_benchmark_init(bench_test_case_lv_image_params_t *test_para
         // Run benchmark with the most ideal input parameters
         float cycles = lv_image_benchmark_run(test_params, &dsc);        // Call Benchmark cycle
         float per_sample = cycles / ((float)(dsc.dest_w * dsc.dest_h));
-        ESP_LOGI(TAG_LV_IMAGE_BENCH, " %s ideal case: %.3f cycles for %"PRIi32"x%"PRIi32" matrix, %.3f cycles per sample", asm_ansi_func[i], cycles, dsc.dest_w, dsc.dest_h, per_sample);
+        ESP_LOGI(TAG_LV_IMAGE_BENCH, " %s ideal case: %.3f cycles for %"PRIi32"x%"PRIi32" matrix, %.3f cycles per sample",
+                 asm_ansi_func[i], cycles, dsc.dest_w, dsc.dest_h, per_sample);
 
         // Run benchmark with the corner case input parameters
         cycles = lv_image_benchmark_run(test_params, &dsc_cc);           // Call Benchmark cycle
         per_sample = cycles / ((float)(dsc_cc.dest_w * dsc_cc.dest_h));
-        ESP_LOGI(TAG_LV_IMAGE_BENCH, " %s corner case: %.3f cycles for %"PRIi32"x%"PRIi32" matrix, %.3f cycles per sample\n", asm_ansi_func[i], cycles, dsc_cc.dest_w, dsc_cc.dest_h, per_sample);
+        ESP_LOGI(TAG_LV_IMAGE_BENCH, " %s corner case: %.3f cycles for %"PRIi32"x%"PRIi32" matrix, %.3f cycles per sample\n",
+                 asm_ansi_func[i], cycles, dsc_cc.dest_w, dsc_cc.dest_h, per_sample);
 
         // change to ANSI
         dsc.use_asm = false;
@@ -157,11 +194,28 @@ static void lv_image_benchmark_init(bench_test_case_lv_image_params_t *test_para
 static float lv_image_benchmark_run(bench_test_case_lv_image_params_t *test_params, _lv_draw_sw_blend_image_dsc_t *dsc)
 {
     // Call the DUT function for the first time to init the benchmark test
-    test_params->blend_api_func(dsc);
+    if (test_params->blend_api_func != NULL) {
+        test_params->blend_api_func(dsc);                               // Call the LVGL API
+    } else if (test_params->blend_api_func_px_size != NULL) {
+        test_params->blend_api_func_px_size(dsc, 3);                    // Call the LVGL API with set pixel size
+    } else {
+        TEST_ASSERT_MESSAGE(false, "Not supported: Both API pointers can't be NULL");
+    }
 
+
+    // Run the benchmark
     const unsigned int start_b = xthal_get_ccount();
-    for (int i = 0; i < test_params->benchmark_cycles; i++) {
-        test_params->blend_api_func(dsc);
+    if (test_params->blend_api_func != NULL) {
+
+        for (int i = 0; i < test_params->benchmark_cycles; i++) {
+            test_params->blend_api_func(dsc);
+        }
+
+    } else if (test_params->blend_api_func_px_size != NULL) {
+
+        for (int i = 0; i < test_params->benchmark_cycles; i++) {
+            test_params->blend_api_func_px_size(dsc, 3);
+        }
     }
     const unsigned int end_b = xthal_get_ccount();
 

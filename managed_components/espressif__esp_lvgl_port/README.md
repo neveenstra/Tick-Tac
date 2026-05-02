@@ -64,6 +64,7 @@ Add an LCD screen to the LVGL. It can be called multiple times for adding multip
         .monochrome = false,
         .mipi_dsi = false,
         .color_format = LV_COLOR_FORMAT_RGB565,
+        .rounder_cb = my_rounder_cb,
         .rotation = {
             .swap_xy = false,
             .mirror_x = false,
@@ -107,6 +108,9 @@ Add touch input to the LVGL. It can be called more times for adding more touch i
     /* If deinitializing LVGL port, remember to delete all touches: */
     lvgl_port_remove_touch(touch_handle);
 ```
+
+> [!NOTE]
+> If the screen has another resolution than the touch resolution, you can use scaling by add `.scale.x` or `.scale.y` into `lvgl_port_touch_cfg_t` configuration structure.
 
 ### Add buttons input
 
@@ -267,10 +271,26 @@ Display rotation can be changed at runtime.
 ```
 
 > [!NOTE]
-> This feature consume more RAM.
+> Software rotation consumes more RAM. Software rotation uses [PPA](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/ppa.html) if available on the chip (e.g. ESP32P4).
 
 > [!NOTE]
 > During the hardware rotating, the component call [`esp_lcd`](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd.html) API. When using software rotation, you cannot use neither `direct_mode` nor `full_refresh` in the driver. See [LVGL documentation](https://docs.lvgl.io/8.3/porting/display.html?highlight=sw_rotate) for more info.
+
+### Detecting gestures
+
+LVGL (version 9.4 and higher) includes support for software detection of multi-touch gestures.
+This detection can be enabled by setting the `LV_USE_GESTURE_RECOGNITION` config and having `ESP_LCD_TOUCH_MAX_POINTS` > 1.
+Example usage of the gesture callback can be found in LVGL [documentation](https://docs.lvgl.io/master/details/main-modules/indev/gestures.html).
+
+The LVGL port task is responsible for passing the touch coordinates to the gesture recognizers and calling the registered callback when a gesture is detected.
+
+To correctly distinguish two finger swipe from rotation, we recommend changing the default value (which is 0) for the rotation threshold.
+From our testing we recommend starting with 0.15 radians.
+
+```c
+    lv_indev_t indev = bsp_display_get_input_dev();
+    lv_indev_set_rotation_rad_threshold(indev, 0.15f);
+```
 
 ### Using PSRAM canvas
 

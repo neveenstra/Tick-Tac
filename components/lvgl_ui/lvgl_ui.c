@@ -32,10 +32,12 @@ static uint16_t current_tempo = 120;
 static bool     is_playing    = false;
 
 // UI handles updated at runtime
-static lv_obj_t *tempo_label;
-static lv_obj_t *start_stop_btn;
-static lv_obj_t *start_stop_label;
-static lv_obj_t *bpm_box_obj;
+static lv_obj_t   *tempo_label;
+static lv_obj_t   *start_stop_btn;
+static lv_obj_t   *start_stop_label;
+static lv_obj_t   *bpm_box_obj;
+static lv_obj_t   *ppq_label;
+static lv_timer_t *ppq_hide_timer;
 
 // Tap tempo ring buffer
 #define TAP_MAX        8
@@ -436,6 +438,18 @@ void lvgl_ui_init(void)
     lv_obj_set_style_text_font(plus_lbl,  &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_set_style_text_color(plus_lbl, COLOR_CYAN,             LV_PART_MAIN);
     lv_obj_center(plus_lbl);
+
+    // PPQ readout, centered between the - and + buttons. Not clickable, so
+    // touches in this area still fall through to the long-press detection.
+    // Hidden by default; revealed for 5s when PPQ changes via long-press.
+    ppq_label = lv_label_create(root);
+    lv_obj_set_style_text_font(ppq_label,  &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_style_text_color(ppq_label, COLOR_DIM,              LV_PART_MAIN);
+    lv_obj_align(ppq_label, LV_ALIGN_BOTTOM_MID, 0, -10);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "PPQ %d", midi_clock_get_ppq());
+    lv_label_set_text(ppq_label, buf);
+    lv_obj_add_flag(ppq_label, LV_OBJ_FLAG_HIDDEN);
 }
 
 // ------------------------------------------------------------------ public API
@@ -465,4 +479,31 @@ void lvgl_ui_set_dimmed(bool dimmed)
     } else if (is_playing) {
         start_beat_pulse();
     }
+}
+
+static void ppq_hide_cb(lv_timer_t *t)
+{
+    if (ppq_label) lv_obj_add_flag(ppq_label, LV_OBJ_FLAG_HIDDEN);
+    ppq_hide_timer = NULL;   // LVGL auto-deletes one-shot timers after firing
+}
+
+void lvgl_ui_refresh_ppq(void)
+{
+    if (!ppq_label) return;
+    char buf[16];
+    snprintf(buf, sizeof(buf), "PPQ %d", midi_clock_get_ppq());
+    lv_label_set_text(ppq_label, buf);
+    lv_obj_clear_flag(ppq_label, LV_OBJ_FLAG_HIDDEN);
+
+    if (ppq_hide_timer) {
+        lv_timer_del(ppq_hide_timer);
+        ppq_hide_timer = NULL;
+    }
+    ppq_hide_timer = lv_timer_create(ppq_hide_cb, 5000, NULL);
+    lv_timer_set_repeat_count(ppq_hide_timer, 1);
+}
+
+bool lvgl_ui_is_ppq_visible(void)
+{
+    return ppq_label && !lv_obj_has_flag(ppq_label, LV_OBJ_FLAG_HIDDEN);
 }
